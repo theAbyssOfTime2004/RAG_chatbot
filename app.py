@@ -24,7 +24,7 @@ if "llm" not in st.session_state:
 
 @st.cache_resource
 def load_embeddings_model():
-    return HuggingFaceEmbeddings(model_name="bkai-foundation-model/vietnamese-bi-encoder")
+    return HuggingFaceEmbeddings(model_name="bkai-foundation-models/vietnamese-bi-encoder")
 
 @st.cache_resource
 def load_llm_model():

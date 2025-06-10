@@ -9,3 +9,5 @@ langchain-community==0.3.24
 langchain_huggingface==0.2.0
 python-dotenv==1.1.0
 pypdf
+streamlit
+pyngrok

@@ -8,8 +8,10 @@ from langchain_chroma import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain import hub
-import os # Thêm import os nếu bạn muốn kiểm tra sự tồn tại của tệp
+import os
+import logging
 
+logging.getLogger("transformers").setLevel(logging.WARNING)
 # --- Constants and Configuration ---
 PDF_FILE_PATH = "tóm tắt bài báo 2.pdf" 
 EMBEDDING_MODEL_NAME = "bkai-foundation-models/vietnamese-bi-encoder"
@@ -146,9 +148,15 @@ def main():
         return
 
     # 7. Ask a question
-    user_question = "Phương Pháp Nghiên Cứu là gì?" # Hoặc nhận input từ người dùng
-    print(f"\nCâu hỏi: {user_question}")
-    
+    user_question = input("Mời bạn nhập câu hỏi: ") 
+
+    if not user_question:
+        print("Không có câu hỏi nào được nhập. Kết thúc chương trình.")
+        return
+
+    print(f"\nCâu hỏi của bạn: {user_question}")
+    print("Đang xử lý, vui lòng đợi...") # <--- THÊM DÒNG NÀY
+
     # Invoke chain và xử lý output
     try:
         output = rag_chain.invoke(user_question)
