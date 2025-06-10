@@ -42,7 +42,7 @@ def split_documents(documents, embeddings_model):
         buffer_size=1,
         breakpoint_threshold_type="percentile",
         breakpoint_threshold_amount=95,
-        min_chunk_size=500, # Bạn có thể điều chỉnh các tham số này
+        min_chunk_size=500, 
         add_start_index=True
     )
     docs = semantic_splitter.split_documents(documents)
@@ -98,10 +98,20 @@ def build_rag_chain(retriever, llm):
     if not retriever or not llm:
         return None
     print("Đang xây dựng RAG chain...")
-    prompt = hub.pull("rlm/rag-prompt")
+    #prompt_hub = hub.pull("rlm/rag-prompt")
+    custom_prompt_template = """Bạn là một trợ lý AI hữu ích. Chỉ sử dụng thông tin được cung cấp trong ngữ cảnh sau để trả lời câu hỏi.
+Nếu bạn không biết câu trả lời dựa trên ngữ cảnh, hãy nói rằng bạn không biết. Đừng cố bịa ra câu trả lời.
+Hãy trả lời câu hỏi bằng tiếng Việt.
+
+Ngữ cảnh:
+{context}
+
+Câu hỏi: {question}
+
+Trả lời (bằng tiếng Việt):"""
     rag_chain = (
         {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt
+        | custom_prompt_template
         | llm
         | StrOutputParser()
     )

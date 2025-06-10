@@ -11,6 +11,7 @@ from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, BitsAndBytesConfig
+from langchain_core.prompts import ChatPromptTemplate 
 
 # Khởi tạo session state
 if "rag_chain" not in st.session_state:
@@ -65,7 +66,7 @@ def process_pdf_documents(uploaded_file):
     documents = loader.load()
 
     semantic_splitter = SemanticChunker(
-        embeddings=st.session_state.embeddings, # Sử dụng embeddings đã load
+        embeddings=st.session_state.embeddings, 
         buffer_size=1,
         breakpoint_threshold_type="percentile",
         breakpoint_threshold_amount=95,
@@ -74,18 +75,32 @@ def process_pdf_documents(uploaded_file):
     )
 
     docs = semantic_splitter.split_documents(documents)
-    # Sửa lỗi cú pháp ở đây
     vector_db = Chroma.from_documents(documents=docs, embedding=st.session_state.embeddings)
-    retriever = vector_db.as_retriever()
-    prompt_hub = hub.pull("rlm/rag-prompt")
+    retriever = vector_db.as_retriever(search_kwargs={"k": 3}) # Lấy top 3 chunks liên quan
+
+    # prompt_hub = hub.pull("rlm/rag-prompt") # Xóa hoặc bình luận dòng này
+
+    # Tạo prompt tùy chỉnh yêu cầu trả lời bằng tiếng Việt
+    custom_prompt_template = """Bạn là một trợ lý AI hữu ích. Chỉ sử dụng thông tin được cung cấp trong ngữ cảnh sau để trả lời câu hỏi.
+Nếu bạn không biết câu trả lời dựa trên ngữ cảnh, hãy nói rằng bạn không biết. Đừng cố bịa ra câu trả lời.
+Hãy trả lời câu hỏi bằng tiếng Việt.
+
+Ngữ cảnh:
+{context}
+
+Câu hỏi: {question}
+
+Trả lời (bằng tiếng Việt):"""
+    
+    prompt = ChatPromptTemplate.from_template(custom_prompt_template)
 
     def format_docs(docs_list):
         return "\n\n".join(doc.page_content for doc in docs_list)
 
     rag_chain_pipeline = (
         {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt_hub
-        | st.session_state.llm # Sử dụng LLM đã load
+        | prompt # Sử dụng prompt tùy chỉnh của bạn
+        | st.session_state.llm 
         | StrOutputParser()
     )
     
